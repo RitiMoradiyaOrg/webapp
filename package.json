@@ -1,0 +1,27 @@
+{
+  "name": "webapp-health-check",
+  "version": "1.0.0",
+  "description": "Cloud Native Health Check API with Node.js and PostgreSQL",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ritimoradiya/webapp-fork.git"
+  },
+  "keywords": ["health-check", "api", "nodejs", "postgresql", "cloud-native"],
+  "author": "Riti Moradiya",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ritimoradiya/webapp-fork/issues"
+  },
+  "homepage": "https://github.com/ritimoradiya/webapp-fork#readme",
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "pg": "^8.16.3",
+    "pg-hstore": "^2.3.4",
+    "sequelize": "^6.37.7"
+  }
+}
