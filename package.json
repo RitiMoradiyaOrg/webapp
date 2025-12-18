@@ -10,7 +10,13 @@
     "type": "git",
     "url": "git+https://github.com/ritimoradiya/webapp-fork.git"
   },
-  "keywords": ["health-check", "api", "nodejs", "postgresql", "cloud-native"],
+  "keywords": [
+    "health-check",
+    "api",
+    "nodejs",
+    "postgresql",
+    "cloud-native"
+  ],
   "author": "Riti Moradiya",
   "license": "MIT",
   "bugs": {
@@ -18,6 +24,7 @@
   },
   "homepage": "https://github.com/ritimoradiya/webapp-fork#readme",
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "pg": "^8.16.3",
