@@ -71,8 +71,134 @@ function isValidEmail(email) {
     return errors;
   }
   
+  // Validate product creation data
+  function validateProductCreate(data) {
+    const errors = [];
+  
+    if (!data.name || typeof data.name !== 'string' || data.name.trim() === '') {
+      errors.push('name is required and must be a non-empty string');
+    }
+  
+    if (!data.description || typeof data.description !== 'string' || data.description.trim() === '') {
+      errors.push('description is required and must be a non-empty string');
+    }
+  
+    if (!data.sku || typeof data.sku !== 'string' || data.sku.trim() === '') {
+      errors.push('sku is required and must be a non-empty string');
+    }
+  
+    if (!data.manufacturer || typeof data.manufacturer !== 'string' || data.manufacturer.trim() === '') {
+      errors.push('manufacturer is required and must be a non-empty string');
+    }
+  
+    if (data.quantity === undefined || data.quantity === null) {
+      errors.push('quantity is required');
+    } else if (!Number.isInteger(data.quantity) || data.quantity < 0) {
+      errors.push('quantity must be an integer >= 0');
+    }
+  
+    // Check for extra fields (readOnly fields)
+    const allowedFields = ['name', 'description', 'sku', 'manufacturer', 'quantity'];
+    const providedFields = Object.keys(data);
+    const extraFields = providedFields.filter(field => !allowedFields.includes(field));
+    
+    if (extraFields.length > 0) {
+      errors.push(`Cannot set fields: ${extraFields.join(', ')}`);
+    }
+  
+    return errors;
+  }
+  
+  // Validate product update data (PUT - all fields required)
+  function validateProductUpdate(data) {
+    const errors = [];
+  
+    if (!data.name || typeof data.name !== 'string' || data.name.trim() === '') {
+      errors.push('name is required and must be a non-empty string');
+    }
+  
+    if (!data.description || typeof data.description !== 'string' || data.description.trim() === '') {
+      errors.push('description is required and must be a non-empty string');
+    }
+  
+    if (!data.sku || typeof data.sku !== 'string' || data.sku.trim() === '') {
+      errors.push('sku is required and must be a non-empty string');
+    }
+  
+    if (!data.manufacturer || typeof data.manufacturer !== 'string' || data.manufacturer.trim() === '') {
+      errors.push('manufacturer is required and must be a non-empty string');
+    }
+  
+    if (data.quantity === undefined || data.quantity === null) {
+      errors.push('quantity is required');
+    } else if (!Number.isInteger(data.quantity) || data.quantity < 0) {
+      errors.push('quantity must be an integer >= 0');
+    }
+  
+    // Check for disallowed fields
+    const allowedFields = ['name', 'description', 'sku', 'manufacturer', 'quantity'];
+    const providedFields = Object.keys(data);
+    const extraFields = providedFields.filter(field => !allowedFields.includes(field));
+    
+    if (extraFields.length > 0) {
+      errors.push(`Cannot set fields: ${extraFields.join(', ')}`);
+    }
+  
+    return errors;
+  }
+  
+  // Validate product partial update (PATCH - optional fields)
+  function validateProductPatch(data) {
+    const errors = [];
+    const allowedFields = ['name', 'description', 'sku', 'manufacturer', 'quantity'];
+    const providedFields = Object.keys(data);
+  
+    // Check for disallowed fields
+    const invalidFields = providedFields.filter(field => !allowedFields.includes(field));
+    
+    if (invalidFields.length > 0) {
+      return ['Cannot update fields: ' + invalidFields.join(', ')];
+    }
+  
+    // Validate provided fields
+    if (data.name !== undefined) {
+      if (typeof data.name !== 'string' || data.name.trim() === '') {
+        errors.push('name must be a non-empty string');
+      }
+    }
+  
+    if (data.description !== undefined) {
+      if (typeof data.description !== 'string' || data.description.trim() === '') {
+        errors.push('description must be a non-empty string');
+      }
+    }
+  
+    if (data.sku !== undefined) {
+      if (typeof data.sku !== 'string' || data.sku.trim() === '') {
+        errors.push('sku must be a non-empty string');
+      }
+    }
+  
+    if (data.manufacturer !== undefined) {
+      if (typeof data.manufacturer !== 'string' || data.manufacturer.trim() === '') {
+        errors.push('manufacturer must be a non-empty string');
+      }
+    }
+  
+    if (data.quantity !== undefined) {
+      if (!Number.isInteger(data.quantity) || data.quantity < 0) {
+        errors.push('quantity must be an integer >= 0');
+      }
+    }
+  
+    return errors;
+  }
+  
   module.exports = {
     isValidEmail,
     validateUserCreate,
-    validateUserUpdate
+    validateUserUpdate,
+    validateProductCreate,
+    validateProductUpdate,
+    validateProductPatch
   };
