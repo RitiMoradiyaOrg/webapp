@@ -10,6 +10,21 @@ jobs:
     runs-on: ubuntu-latest
     name: Build and Share AMI
     
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: health_check_db_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -26,6 +41,11 @@ jobs:
         run: npm test
         env:
           NODE_ENV: test
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: health_check_db_test
+          DB_USER: postgres
+          DB_PASSWORD: postgres
 
       - name: Create application artifact
         run: |
