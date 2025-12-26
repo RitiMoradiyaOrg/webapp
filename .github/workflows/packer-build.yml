@@ -1,0 +1,64 @@
+name: Build Custom AMI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-ami:
+    runs-on: ubuntu-latest
+    name: Build and Share AMI
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run integration tests
+        run: npm test
+        env:
+          NODE_ENV: test
+
+      - name: Create application artifact
+        run: |
+          echo "Creating webapp.zip artifact..."
+          zip -r webapp.zip . \
+            -x ".git/*" \
+            -x ".github/*" \
+            -x "node_modules/*" \
+            -x "tests/*" \
+            -x "*.md" \
+            -x ".env*" \
+            -x "packer.pkr.hcl" \
+            -x "webapp.service"
+          ls -lh webapp.zip
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Setup Packer
+        uses: hashicorp/setup-packer@main
+        with:
+          version: 'latest'
+
+      - name: Initialize Packer
+        run: packer init packer.pkr.hcl
+
+      - name: Build AMI
+        run: |
+          packer build \
+            -var "aws_region=${{ secrets.AWS_REGION }}" \
+            -var "demo_account_id=${{ secrets.DEMO_ACCOUNT_ID }}" \
+            packer.pkr.hcl
