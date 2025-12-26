@@ -17,7 +17,6 @@ variable "source_ami" {
   default = "ami-0e2c8caa4b6378d8c"
 }
 
-
 variable "ssh_username" {
   type    = string
   default = "ubuntu"
@@ -124,8 +123,10 @@ build {
       "sudo apt-get install -y unzip",
       "sudo unzip /tmp/webapp.zip -d /opt/webapp",
       "sudo chown -R csye6225:csye6225 /opt/webapp",
+      "echo 'Installing Node.js dependencies...'",
       "cd /opt/webapp",
-      "sudo -u csye6225 npm ci --production"
+      "sudo npm ci --production --unsafe-perm",
+      "sudo chown -R csye6225:csye6225 /opt/webapp"
     ]
   }
 
