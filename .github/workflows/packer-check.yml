@@ -1,0 +1,35 @@
+name: Packer Template Check
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  packer-check:
+    runs-on: ubuntu-latest
+    name: Check Packer Template
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Packer
+        uses: hashicorp/setup-packer@main
+        with:
+          version: 'latest'
+
+      - name: Initialize Packer
+        run: packer init packer.pkr.hcl
+
+      - name: Format check
+        run: |
+          packer fmt -check packer.pkr.hcl
+          if [ $? -ne 0 ]; then
+            echo "Packer template is not formatted correctly"
+            echo "Run 'packer fmt packer.pkr.hcl' locally to fix"
+            exit 1
+          fi
+
+      - name: Validate template
+        run: packer validate packer.pkr.hcl
