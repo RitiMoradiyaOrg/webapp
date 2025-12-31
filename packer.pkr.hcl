@@ -137,8 +137,8 @@ build {
       "DB_HOST=localhost",
       "DB_PORT=5432",
       "DB_NAME=health_check_db",
-      "DB_USER=postgres",
-      "DB_PASSWORD=",
+      "DB_USER=csye6225_db",
+      "DB_PASSWORD=csye6225password",
       "APP_PORT=8080",
       "NODE_ENV=production",
       "EOF",
@@ -151,8 +151,10 @@ build {
     inline = [
       "echo 'Setting up PostgreSQL database...'",
       "sudo -u postgres psql -c \"CREATE DATABASE health_check_db;\"",
-      "sudo -u postgres psql -c \"CREATE USER csye6225_db WITH PASSWORD 'csye6225pass';\"",
+      "sudo -u postgres psql -c \"CREATE USER csye6225_db WITH PASSWORD 'csye6225password';\"",
       "sudo -u postgres psql -c \"GRANT ALL PRIVILEGES ON DATABASE health_check_db TO csye6225_db;\"",
+      "sudo -u postgres psql -d health_check_db -c \"GRANT ALL ON SCHEMA public TO csye6225_db;\"",
+      "sudo -u postgres psql -d health_check_db -c \"GRANT CREATE ON SCHEMA public TO csye6225_db;\"",
       "echo 'Database setup complete'"
     ]
   }
