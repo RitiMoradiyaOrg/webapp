@@ -82,17 +82,7 @@ build {
     ]
   }
 
-  provisioner "shell" {
-    inline = [
-      "echo 'Installing PostgreSQL 14...'",
-      "sudo sh -c 'echo \"deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main\" > /etc/apt/sources.list.d/pgdg.list'",
-      "wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -",
-      "sudo apt-get update",
-      "sudo apt-get install -y postgresql-14 postgresql-contrib-14",
-      "sudo systemctl enable postgresql",
-      "sudo systemctl start postgresql"
-    ]
-  }
+  # PostgreSQL installation REMOVED for Assignment 06 - using RDS instead
 
   provisioner "shell" {
     inline = [
@@ -132,13 +122,9 @@ build {
 
   provisioner "shell" {
     inline = [
-      "echo 'Creating .env file...'",
+      "echo 'Creating placeholder .env file...'",
       "sudo tee /opt/webapp/.env > /dev/null <<EOF",
-      "DB_HOST=localhost",
-      "DB_PORT=5432",
-      "DB_NAME=health_check_db",
-      "DB_USER=csye6225_db",
-      "DB_PASSWORD=csye6225password",
+      "# Database configuration will be set by user data script",
       "APP_PORT=8080",
       "NODE_ENV=production",
       "EOF",
@@ -147,17 +133,7 @@ build {
     ]
   }
 
-  provisioner "shell" {
-    inline = [
-      "echo 'Setting up PostgreSQL database...'",
-      "sudo -u postgres psql -c \"CREATE DATABASE health_check_db;\"",
-      "sudo -u postgres psql -c \"CREATE USER csye6225_db WITH PASSWORD 'csye6225password';\"",
-      "sudo -u postgres psql -c \"GRANT ALL PRIVILEGES ON DATABASE health_check_db TO csye6225_db;\"",
-      "sudo -u postgres psql -d health_check_db -c \"GRANT ALL ON SCHEMA public TO csye6225_db;\"",
-      "sudo -u postgres psql -d health_check_db -c \"GRANT CREATE ON SCHEMA public TO csye6225_db;\"",
-      "echo 'Database setup complete'"
-    ]
-  }
+  # Database setup REMOVED for Assignment 06 - using RDS instead
 
   provisioner "file" {
     source      = "webapp.service"
