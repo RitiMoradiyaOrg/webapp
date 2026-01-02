@@ -24,7 +24,7 @@ const upload = multer({
 });
 
 // POST /v1/product/:productId/image - Upload image
-router.post('/:productId/image', basicAuth, upload.single('image'), async (req, res) => {
+router.post('/v1/product/:productId/image', basicAuth, upload.single('image'), async (req, res) => {
   try {
     const { productId } = req.params;
     const userId = req.user.user_id;
@@ -74,7 +74,7 @@ router.post('/:productId/image', basicAuth, upload.single('image'), async (req, 
 });
 
 // GET /v1/product/:productId/image/:imageId - Get specific image details
-router.get('/:productId/image/:imageId', basicAuth, async (req, res) => {
+router.get('/v1/product/:productId/image/:imageId', basicAuth, async (req, res) => {
   try {
     const { productId, imageId } = req.params;
     const userId = req.user.user_id;
@@ -112,7 +112,7 @@ router.get('/:productId/image/:imageId', basicAuth, async (req, res) => {
 });
 
 // GET /v1/product/:productId/image - Get all images for a product
-router.get('/:productId/image', basicAuth, async (req, res) => {
+router.get('/v1/product/:productId/image', basicAuth, async (req, res) => {
   try {
     const { productId } = req.params;
     const userId = req.user.user_id;
@@ -141,7 +141,7 @@ router.get('/:productId/image', basicAuth, async (req, res) => {
 });
 
 // DELETE /v1/product/:productId/image/:imageId - Delete image
-router.delete('/:productId/image/:imageId', basicAuth, async (req, res) => {
+router.delete('/v1/product/:productId/image/:imageId', basicAuth, async (req, res) => {
   try {
     const { productId, imageId } = req.params;
     const userId = req.user.user_id;
