@@ -150,6 +150,47 @@ build {
     ]
   }
 
+  #######################################
+  # NEW FOR ASSIGNMENT 07: CloudWatch Agent Installation
+  #######################################
+  provisioner "shell" {
+    inline = [
+      "echo 'Creating log directory for webapp...'",
+      "sudo mkdir -p /var/log/webapp",
+      "sudo chown csye6225:csye6225 /var/log/webapp",
+      "sudo chmod 755 /var/log/webapp"
+    ]
+  }
+
+  provisioner "shell" {
+    inline = [
+      "echo 'Installing CloudWatch Agent...'",
+      "wget https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb",
+      "sudo dpkg -i -E ./amazon-cloudwatch-agent.deb",
+      "rm ./amazon-cloudwatch-agent.deb",
+      "echo 'CloudWatch Agent installed successfully'"
+    ]
+  }
+
+  provisioner "file" {
+    source      = "cloudwatch-config.json"
+    destination = "/tmp/cloudwatch-config.json"
+  }
+
+  provisioner "shell" {
+    inline = [
+      "echo 'Setting up CloudWatch Agent configuration...'",
+      "sudo mkdir -p /opt/aws/amazon-cloudwatch-agent/etc",
+      "sudo mv /tmp/cloudwatch-config.json /opt/aws/amazon-cloudwatch-agent/etc/cloudwatch-config.json",
+      "sudo chown root:root /opt/aws/amazon-cloudwatch-agent/etc/cloudwatch-config.json",
+      "sudo chmod 644 /opt/aws/amazon-cloudwatch-agent/etc/cloudwatch-config.json",
+      "echo 'CloudWatch Agent configuration placed successfully'"
+    ]
+  }
+  #######################################
+  # END OF ASSIGNMENT 07 CODE
+  #######################################
+
   provisioner "shell" {
     inline = [
       "echo 'Cleaning up...'",
