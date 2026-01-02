@@ -1,7 +1,5 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
-const User = require('./User');
-const Product = require('./Product');
 
 const Image = sequelize.define('Image', {
   image_id: {
@@ -16,7 +14,9 @@ const Image = sequelize.define('Image', {
     references: {
       model: 'Products',
       key: 'product_id'
-    }
+    },
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
   },
   file_name: {
     type: DataTypes.STRING,
@@ -34,17 +34,6 @@ const Image = sequelize.define('Image', {
 }, {
   tableName: 'Images',
   timestamps: false
-});
-
-// Relationships
-Image.belongsTo(Product, {
-  foreignKey: 'product_id',
-  onDelete: 'CASCADE'
-});
-
-Product.hasMany(Image, {
-  foreignKey: 'product_id',
-  as: 'images'
 });
 
 module.exports = Image;
