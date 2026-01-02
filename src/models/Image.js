@@ -10,13 +10,7 @@ const Image = sequelize.define('Image', {
   },
   product_id: {
     type: DataTypes.UUID,
-    allowNull: false,
-    references: {
-      model: 'Products',
-      key: 'product_id'
-    },
-    onDelete: 'CASCADE',
-    onUpdate: 'CASCADE'
+    allowNull: false
   },
   file_name: {
     type: DataTypes.STRING,
