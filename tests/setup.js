@@ -2,6 +2,7 @@ const sequelize = require('../src/config/database');
 const User = require('../src/models/User');
 const Product = require('../src/models/Product');
 const HealthCheck = require('../src/models/HealthCheck');
+const Image = require('../src/models/Image');
 
 // Setup before all tests
 beforeAll(async () => {
@@ -33,7 +34,8 @@ afterAll(async () => {
 // Clear data between tests
 afterEach(async () => {
   try {
-    // Clear all tables
+    // Clear all tables (Images first due to foreign key constraint)
+    await Image.destroy({ where: {}, force: true });
     await Product.destroy({ where: {}, force: true });
     await User.destroy({ where: {}, force: true });
     await HealthCheck.destroy({ where: {}, force: true });
