@@ -27,7 +27,7 @@ const upload = multer({
 router.post('/v1/product/:productId/image', basicAuth, upload.single('image'), async (req, res) => {
   try {
     const { productId } = req.params;
-    const userId = req.user.user_id;
+    const userId = req.user.id;
 
     // Check if file was uploaded
     if (!req.file) {
@@ -77,7 +77,7 @@ router.post('/v1/product/:productId/image', basicAuth, upload.single('image'), a
 router.get('/v1/product/:productId/image/:imageId', basicAuth, async (req, res) => {
   try {
     const { productId, imageId } = req.params;
-    const userId = req.user.user_id;
+    const userId = req.user.id;
 
     // Verify product belongs to user
     const product = await Product.findOne({
@@ -115,7 +115,7 @@ router.get('/v1/product/:productId/image/:imageId', basicAuth, async (req, res) 
 router.get('/v1/product/:productId/image', basicAuth, async (req, res) => {
   try {
     const { productId } = req.params;
-    const userId = req.user.user_id;
+    const userId = req.user.id;
 
     // Verify product belongs to user
     const product = await Product.findOne({
@@ -144,7 +144,7 @@ router.get('/v1/product/:productId/image', basicAuth, async (req, res) => {
 router.delete('/v1/product/:productId/image/:imageId', basicAuth, async (req, res) => {
   try {
     const { productId, imageId } = req.params;
-    const userId = req.user.user_id;
+    const userId = req.user.id;
 
     // Verify product belongs to user
     const product = await Product.findOne({
