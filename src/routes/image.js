@@ -36,7 +36,7 @@ router.post('/v1/product/:productId/image', basicAuth, upload.single('image'), a
 
     // Verify product exists and belongs to user
     const product = await Product.findOne({
-      where: { product_id: productId, owner_user_id: userId }
+      where: { id: productId, owner_user_id: userId }
     });
 
     if (!product) {
@@ -81,7 +81,7 @@ router.get('/v1/product/:productId/image/:imageId', basicAuth, async (req, res) 
 
     // Verify product belongs to user
     const product = await Product.findOne({
-      where: { product_id: productId, owner_user_id: userId }
+      where: { id: productId, owner_user_id: userId }
     });
 
     if (!product) {
@@ -119,7 +119,7 @@ router.get('/v1/product/:productId/image', basicAuth, async (req, res) => {
 
     // Verify product belongs to user
     const product = await Product.findOne({
-      where: { product_id: productId, owner_user_id: userId }
+      where: { id: productId, owner_user_id: userId }
     });
 
     if (!product) {
@@ -148,7 +148,7 @@ router.delete('/v1/product/:productId/image/:imageId', basicAuth, async (req, re
 
     // Verify product belongs to user
     const product = await Product.findOne({
-      where: { product_id: productId, owner_user_id: userId }
+      where: { id: productId, owner_user_id: userId }
     });
 
     if (!product) {
