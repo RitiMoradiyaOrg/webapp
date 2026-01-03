@@ -20,11 +20,27 @@ const transports = [
   new winston.transports.Console(),
 ];
 
-// Only add file transport in production (not during tests)
+// Only add file transports in production (not during tests)
 if (process.env.NODE_ENV !== 'test') {
   transports.push(
+    // INFO level and above (INFO, WARN, ERROR)
     new winston.transports.File({
-      filename: '/var/log/webapp/app.log',
+      filename: '/var/log/webapp/info.log',
+      level: 'info',
+      maxsize: 10485760, // 10MB
+      maxFiles: 5,
+    }),
+    // WARN level and above (WARN, ERROR)
+    new winston.transports.File({
+      filename: '/var/log/webapp/warn.log',
+      level: 'warn',
+      maxsize: 10485760, // 10MB
+      maxFiles: 5,
+    }),
+    // ERROR level only
+    new winston.transports.File({
+      filename: '/var/log/webapp/error.log',
+      level: 'error',
       maxsize: 10485760, // 10MB
       maxFiles: 5,
     })
