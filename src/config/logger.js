@@ -14,6 +14,11 @@ const logFormat = winston.format.combine(
   })
 );
 
+// Filter to only allow specific level (EXCLUSIVE - blocks other levels)
+const filterOnly = (level) => winston.format((info) => {
+  return info.level === level ? info : false;
+})();
+
 // Create transports array
 const transports = [
   // Always write to console
@@ -23,24 +28,27 @@ const transports = [
 // Only add file transports in production (not during tests)
 if (process.env.NODE_ENV !== 'test') {
   transports.push(
-    // INFO level and above (INFO, WARN, ERROR)
+    // INFO level ONLY (exclusive - no WARN, no ERROR)
     new winston.transports.File({
       filename: '/var/log/webapp/info.log',
       level: 'info',
+      format: winston.format.combine(filterOnly('info'), logFormat),
       maxsize: 10485760, // 10MB
       maxFiles: 5,
     }),
-    // WARN level and above (WARN, ERROR)
+    // WARN level ONLY (exclusive - no INFO, no ERROR)
     new winston.transports.File({
       filename: '/var/log/webapp/warn.log',
       level: 'warn',
+      format: winston.format.combine(filterOnly('warn'), logFormat),
       maxsize: 10485760, // 10MB
       maxFiles: 5,
     }),
-    // ERROR level only
+    // ERROR level ONLY (exclusive - no INFO, no WARN)
     new winston.transports.File({
       filename: '/var/log/webapp/error.log',
       level: 'error',
+      format: winston.format.combine(filterOnly('error'), logFormat),
       maxsize: 10485760, // 10MB
       maxFiles: 5,
     })
