@@ -6,6 +6,33 @@ const { validateProductCreate, validateProductUpdate, validateProductPatch } = r
 const logger = require('../config/logger');
 const statsd = require('../config/statsd');
 
+// GET /v1/product - List all products for authenticated user
+router.get('/v1/product', basicAuth, async (req, res) => {
+  const apiStartTime = Date.now();
+  logger.info('GET /v1/product - Fetching all products for user', { userId: req.user.id });
+  statsd.increment('api.product.list.count');
+
+  try {
+    const dbStartTime = Date.now();
+    const products = await Product.findAll({
+      where: { owner_user_id: req.user.id }
+    });
+    statsd.timing('database.product.findAll', Date.now() - dbStartTime);
+
+    const apiTime = Date.now() - apiStartTime;
+    statsd.timing('api.product.list.time', apiTime);
+    logger.info(`GET /v1/product - Retrieved ${products.length} products in ${apiTime}ms`);
+
+    return res.status(200).json(products);
+  } catch (error) {
+    const apiTime = Date.now() - apiStartTime;
+    statsd.timing('api.product.list.time', apiTime);
+    statsd.increment('api.product.list.error');
+    logger.error('GET /v1/product - Error listing products', { error: error.message, stack: error.stack });
+    return res.status(400).end();
+  }
+});
+
 // POST /v1/product - Create a new product
 router.post('/v1/product', basicAuth, async (req, res) => {
   const apiStartTime = Date.now();

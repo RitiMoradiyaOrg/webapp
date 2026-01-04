@@ -71,6 +71,28 @@ router.post('/v1/user', async (req, res) => {
   }
 });
 
+// GET /v1/user/self - Get authenticated user information
+router.get('/v1/user/self', basicAuth, async (req, res) => {
+  const apiStartTime = Date.now();
+  logger.info('GET /v1/user/self - Fetching authenticated user information');
+  statsd.increment('api.user.self.count');
+
+  try {
+    const apiTime = Date.now() - apiStartTime;
+    statsd.timing('api.user.self.time', apiTime);
+    logger.info(`GET /v1/user/self - User retrieved successfully in ${apiTime}ms`);
+
+    // Return authenticated user data (req.user is already populated by basicAuth middleware)
+    return res.status(200).json(req.user);
+  } catch (error) {
+    const apiTime = Date.now() - apiStartTime;
+    statsd.timing('api.user.self.time', apiTime);
+    statsd.increment('api.user.self.error');
+    logger.error('GET /v1/user/self - Error getting user', { error: error.message, stack: error.stack });
+    return res.status(400).end();
+  }
+});
+
 // GET /v1/user/:userId - Get user information
 router.get('/v1/user/:userId', basicAuth, async (req, res) => {
   const apiStartTime = Date.now();
