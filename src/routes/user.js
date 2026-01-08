@@ -42,9 +42,9 @@ router.post('/v1/user', async (req, res) => {
       return res.status(400).json({ error: 'User with this email already exists' });
     }
 
-    // Generate verification token (valid for 1 minute)
+    // ✅ FIXED: Generate verification token (valid for 10 minutes instead of 1)
     const verificationToken = uuidv4();
-    const tokenExpiry = new Date(Date.now() + 60 * 1000); // 1 minute from now
+    const tokenExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
 
     // Create user (password will be hashed automatically by User model)
     const dbCreateStartTime = Date.now();
@@ -143,7 +143,7 @@ router.get('/v1/user/verify', async (req, res) => {
       return res.status(400).json({ error: 'Invalid verification token' });
     }
 
-    // Check if token has expired (1 minute validity)
+    // Check if token has expired (10 minute validity)
     const now = new Date();
     if (now > user.verification_token_expiry) {
       logger.warn('GET /v1/user/verify - Token expired', { 
