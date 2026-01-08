@@ -47,6 +47,23 @@ const User = sequelize.define('users', {
     allowNull: false,
     defaultValue: DataTypes.NOW,
     field: 'account_updated'
+  },
+  // NEW FIELDS FOR ASSIGNMENT 09 - Email Verification
+  email_verified: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+    field: 'email_verified'
+  },
+  verification_token: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    field: 'verification_token'
+  },
+  verification_token_expiry: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    field: 'verification_token_expiry'
   }
 }, {
   tableName: 'users',
@@ -64,10 +81,12 @@ User.prototype.validatePassword = function(password) {
   return bcrypt.compareSync(password, this.password);
 };
 
-// Method to get user without password
+// Method to get user without password and sensitive verification fields
 User.prototype.toJSON = function() {
   const values = Object.assign({}, this.get());
   delete values.password;
+  delete values.verification_token;
+  delete values.verification_token_expiry;
   return values;
 };
 

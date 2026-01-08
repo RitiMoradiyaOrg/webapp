@@ -5,6 +5,8 @@ const { basicAuth } = require('../middleware/auth');
 const { validateUserCreate, validateUserUpdate } = require('../utils/validation');
 const logger = require('../config/logger');
 const statsd = require('../config/statsd');
+const { v4: uuidv4 } = require('uuid');
+const { publishUserRegistration } = require('../utils/sns');
 
 // Helper function to validate UUID format
 function isValidUUID(uuid) {
@@ -40,21 +42,50 @@ router.post('/v1/user', async (req, res) => {
       return res.status(400).json({ error: 'User with this email already exists' });
     }
 
+    // Generate verification token (valid for 1 minute)
+    const verificationToken = uuidv4();
+    const tokenExpiry = new Date(Date.now() + 60 * 1000); // 1 minute from now
+
     // Create user (password will be hashed automatically by User model)
     const dbCreateStartTime = Date.now();
     const user = await User.create({
       first_name,
       last_name,
       password,
-      username
+      username,
+      verification_token: verificationToken,
+      verification_token_expiry: tokenExpiry,
+      email_verified: false
     });
     statsd.timing('database.user.create', Date.now() - dbCreateStartTime);
+
+    // Publish message to SNS for Lambda to send verification email
+    try {
+      const snsStartTime = Date.now();
+      await publishUserRegistration({
+        email: username,
+        firstName: first_name,
+        lastName: last_name,
+        token: verificationToken
+      });
+      statsd.timing('sns.publish.time', Date.now() - snsStartTime);
+      statsd.increment('sns.publish.success');
+      logger.info('SNS message published successfully', { username });
+    } catch (snsError) {
+      // Log SNS error but don't fail user creation
+      statsd.increment('sns.publish.error');
+      logger.error('Failed to publish SNS message', {
+        error: snsError.message,
+        username
+      });
+      // Continue - user is created, email just won't be sent
+    }
 
     const apiTime = Date.now() - apiStartTime;
     statsd.timing('api.user.create.time', apiTime);
     logger.info(`POST /v1/user - User created successfully: ${username} in ${apiTime}ms`);
 
-    // Return 201 with user data (password excluded by toJSON method)
+    // Return 201 with user data (password and verification fields excluded by toJSON method)
     return res.status(201).json(user);
   } catch (error) {
     const apiTime = Date.now() - apiStartTime;
@@ -68,6 +99,86 @@ router.post('/v1/user', async (req, res) => {
     }
     
     return res.status(400).json({ error: 'Failed to create user' });
+  }
+});
+
+// GET /v1/user/verify - Verify user email
+router.get('/v1/user/verify', async (req, res) => {
+  const apiStartTime = Date.now();
+  logger.info('GET /v1/user/verify - Verifying user email');
+  statsd.increment('api.user.verify.count');
+
+  try {
+    const { email, token } = req.query;
+
+    // Validate required parameters
+    if (!email || !token) {
+      logger.warn('GET /v1/user/verify - Missing email or token', { email, hasToken: !!token });
+      statsd.increment('api.user.verify.missing_params');
+      return res.status(400).json({ error: 'Email and token are required' });
+    }
+
+    // Find user by email
+    const dbStartTime = Date.now();
+    const user = await User.findOne({ where: { username: email } });
+    statsd.timing('database.user.findOne', Date.now() - dbStartTime);
+
+    if (!user) {
+      logger.warn('GET /v1/user/verify - User not found', { email });
+      statsd.increment('api.user.verify.not_found');
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Check if already verified
+    if (user.email_verified) {
+      logger.info('GET /v1/user/verify - User already verified', { email });
+      statsd.increment('api.user.verify.already_verified');
+      return res.status(200).json({ message: 'Email already verified' });
+    }
+
+    // Check if token matches
+    if (user.verification_token !== token) {
+      logger.warn('GET /v1/user/verify - Invalid token', { email });
+      statsd.increment('api.user.verify.invalid_token');
+      return res.status(400).json({ error: 'Invalid verification token' });
+    }
+
+    // Check if token has expired (1 minute validity)
+    const now = new Date();
+    if (now > user.verification_token_expiry) {
+      logger.warn('GET /v1/user/verify - Token expired', { 
+        email, 
+        expiry: user.verification_token_expiry,
+        now 
+      });
+      statsd.increment('api.user.verify.token_expired');
+      return res.status(400).json({ error: 'Verification token has expired' });
+    }
+
+    // Mark user as verified and clear token
+    user.email_verified = true;
+    user.verification_token = null;
+    user.verification_token_expiry = null;
+
+    const dbUpdateStartTime = Date.now();
+    await user.save();
+    statsd.timing('database.user.update', Date.now() - dbUpdateStartTime);
+
+    const apiTime = Date.now() - apiStartTime;
+    statsd.timing('api.user.verify.time', apiTime);
+    statsd.increment('api.user.verify.success');
+    logger.info(`GET /v1/user/verify - Email verified successfully: ${email} in ${apiTime}ms`);
+
+    return res.status(200).json({ message: 'Email verified successfully' });
+  } catch (error) {
+    const apiTime = Date.now() - apiStartTime;
+    statsd.timing('api.user.verify.time', apiTime);
+    statsd.increment('api.user.verify.error');
+    logger.error('GET /v1/user/verify - Error verifying email', { 
+      error: error.message, 
+      stack: error.stack 
+    });
+    return res.status(500).json({ error: 'Failed to verify email' });
   }
 });
 
