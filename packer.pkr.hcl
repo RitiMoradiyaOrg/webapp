@@ -72,6 +72,32 @@ build {
     ]
   }
 
+  #######################################
+  # CRITICAL: Install AWS CLI
+  #######################################
+  provisioner "shell" {
+    inline = [
+      "echo 'Installing AWS CLI v2...'",
+      "curl https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o awscliv2.zip",
+      "sudo apt-get install -y unzip",
+      "unzip awscliv2.zip",
+      "sudo ./aws/install",
+      "rm -rf aws awscliv2.zip",
+      "aws --version"
+    ]
+  }
+
+  #######################################
+  # Install PostgreSQL Client (for pg_isready)
+  #######################################
+  provisioner "shell" {
+    inline = [
+      "echo 'Installing PostgreSQL client tools...'",
+      "sudo apt-get install -y postgresql-client",
+      "pg_isready --version"
+    ]
+  }
+
   provisioner "shell" {
     inline = [
       "echo 'Installing Node.js 22.x...'",
