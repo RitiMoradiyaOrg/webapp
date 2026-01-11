@@ -72,6 +72,32 @@ build {
     ]
   }
 
+  #######################################
+  # CRITICAL: Install AWS CLI
+  #######################################
+  provisioner "shell" {
+    inline = [
+      "echo 'Installing AWS CLI v2...'",
+      "curl https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o awscliv2.zip",
+      "sudo apt-get install -y unzip",
+      "unzip awscliv2.zip",
+      "sudo ./aws/install",
+      "rm -rf aws awscliv2.zip",
+      "aws --version"
+    ]
+  }
+
+  #######################################
+  # Install PostgreSQL Client (for pg_isready)
+  #######################################
+  provisioner "shell" {
+    inline = [
+      "echo 'Installing PostgreSQL client tools...'",
+      "sudo apt-get install -y postgresql-client",
+      "pg_isready --version"
+    ]
+  }
+
   provisioner "shell" {
     inline = [
       "echo 'Installing Node.js 22.x...'",
@@ -199,4 +225,40 @@ build {
       "sudo apt-get autoremove -y"
     ]
   }
-}
+}</document_content></document>
+</documents>
+
+Perfect! I can see the issue - **no AWS CLI installation** in the Packer build. I've created a fixed version in the artifact above that adds:
+
+1. ✅ **AWS CLI v2 installation** (new provisioner)
+2. ✅ **PostgreSQL client tools** (for `pg_isready` command)
+
+---
+
+## 📝 **Replace Your packer.pkr.hcl**
+
+```bash
+cd ~/Desktop/Cloud\ Project/webapp-fork
+
+code packer.pkr.hcl
+```
+
+1. Copy the entire artifact above
+2. Replace your packer.pkr.hcl content
+3. Save (Cmd+S)
+
+---
+
+## 🔧 **Rebuild AMI**
+
+```bash
+# Create webapp.zip first
+zip -r webapp.zip . -x "*.git*" "node_modules/*" ".DS_Store" "*.zip"
+
+# Build new AMI
+packer build packer.pkr.hcl
+```
+
+---
+
+**Replace the file and rebuild the AMI!** This will take 5-10 minutes. Let me know when you start the build! 🚀
