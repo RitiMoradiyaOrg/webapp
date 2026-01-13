@@ -149,21 +149,37 @@ jobs:
       - name: Start Instance Refresh
         id: start-refresh
         run: |
-          echo "Starting instance refresh for ASG: ${{ steps.get-asg.outputs.asg_name }}"
+          echo "Checking for existing instance refresh..."
           
-          REFRESH_ID=$(aws autoscaling start-instance-refresh \
+          # Check if refresh is already in progress
+          EXISTING_REFRESH=$(aws autoscaling describe-instance-refreshes \
             --auto-scaling-group-name ${{ steps.get-asg.outputs.asg_name }} \
-            --preferences '{
-              "MinHealthyPercentage": 80,
-              "InstanceWarmup": 300,
-              "CheckpointPercentages": [50, 100],
-              "CheckpointDelay": 300
-            }' \
-            --query 'InstanceRefreshId' \
-            --output text \
-            --region ${{ secrets.AWS_REGION }})
+            --region ${{ secrets.AWS_REGION }} \
+            --query 'InstanceRefreshes[?Status==`InProgress`].InstanceRefreshId' \
+            --output text)
           
-          echo "Instance Refresh ID: $REFRESH_ID"
+          if [ -n "$EXISTING_REFRESH" ]; then
+            echo "Instance refresh already in progress: $EXISTING_REFRESH"
+            echo "Skipping new refresh - will use existing one"
+            REFRESH_ID="$EXISTING_REFRESH"
+          else
+            echo "Starting new instance refresh for ASG: ${{ steps.get-asg.outputs.asg_name }}"
+            
+            REFRESH_ID=$(aws autoscaling start-instance-refresh \
+              --auto-scaling-group-name ${{ steps.get-asg.outputs.asg_name }} \
+              --preferences '{
+                "MinHealthyPercentage": 80,
+                "InstanceWarmup": 300,
+                "CheckpointPercentages": [50, 100],
+                "CheckpointDelay": 300
+              }' \
+              --query 'InstanceRefreshId' \
+              --output text \
+              --region ${{ secrets.AWS_REGION }})
+            
+            echo "New instance refresh started: $REFRESH_ID"
+          fi
+          
           echo "refresh_id=$REFRESH_ID" >> $GITHUB_OUTPUT
 
       - name: Monitor Instance Refresh Status
