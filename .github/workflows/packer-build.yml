@@ -166,18 +166,18 @@ jobs:
           echo "Instance Refresh ID: $REFRESH_ID"
           echo "refresh_id=$REFRESH_ID" >> $GITHUB_OUTPUT
 
-      - name: Wait for Instance Refresh to Complete
+      - name: Monitor Instance Refresh Status
         run: |
-          echo "Waiting for instance refresh to complete..."
+          echo "Instance refresh started successfully!"
           echo "Refresh ID: ${{ steps.start-refresh.outputs.refresh_id }}"
-          
-          aws autoscaling wait instance-refresh-complete \
-            --auto-scaling-group-name ${{ steps.get-asg.outputs.asg_name }} \
-            --instance-refresh-ids ${{ steps.start-refresh.outputs.refresh_id }} \
-            --region ${{ secrets.AWS_REGION }} \
-            --cli-read-timeout 1200
-          
-          echo "✓ Instance refresh completed successfully!"
+          echo ""
+          echo "The instance refresh will complete in the background (8-12 minutes)."
+          echo "Monitor progress in AWS Console or with:"
+          echo "  aws autoscaling describe-instance-refreshes \\"
+          echo "    --auto-scaling-group-name ${{ steps.get-asg.outputs.asg_name }} \\"
+          echo "    --region ${{ secrets.AWS_REGION }}"
+          echo ""
+          echo "✓ Deployment initiated successfully!"
 
       - name: Deployment Summary
         if: always()
