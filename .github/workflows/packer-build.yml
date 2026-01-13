@@ -139,7 +139,7 @@ jobs:
         run: |
           echo "Finding Auto Scaling Group..."
           ASG_NAME=$(aws autoscaling describe-auto-scaling-groups \
-            --query "AutoScalingGroups[?Tags[?Key=='Name' && Value=='csye6225-vpc-asg']].AutoScalingGroupName" \
+            --query "AutoScalingGroups[?AutoScalingGroupName=='csye6225-vpc-asg'].AutoScalingGroupName" \
             --output text \
             --region ${{ secrets.AWS_REGION }})
           
