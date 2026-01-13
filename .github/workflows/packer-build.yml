@@ -85,8 +85,8 @@ jobs:
             -var "demo_account_id=${{ secrets.DEMO_ACCOUNT_ID }}" \
             packer.pkr.hcl | tee packer-output.txt
           
-          # Extract AMI ID using regex pattern matching
-          AMI_ID=$(grep -oP 'ami-[a-f0-9]+' packer-output.txt | head -n1)
+          # Extract AMI ID from "AMIs were created" line specifically
+          AMI_ID=$(grep "AMIs were created" packer-output.txt | grep -oP 'ami-[a-f0-9]+' | head -n1)
           echo "New AMI ID: $AMI_ID"
           echo "ami_id=$AMI_ID" >> $GITHUB_OUTPUT
 
