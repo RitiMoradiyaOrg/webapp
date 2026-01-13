@@ -77,8 +77,117 @@ jobs:
         run: packer init packer.pkr.hcl
 
       - name: Build AMI
+        id: packer
         run: |
+          echo "Building AMI..."
           packer build \
             -var "aws_region=${{ secrets.AWS_REGION }}" \
             -var "demo_account_id=${{ secrets.DEMO_ACCOUNT_ID }}" \
-            packer.pkr.hcl
+            packer.pkr.hcl | tee packer-output.txt
+          
+          # Extract AMI ID from Packer output
+          AMI_ID=$(grep 'ami-' packer-output.txt | awk -F': ' '{print $2}' | head -n1)
+          echo "New AMI ID: $AMI_ID"
+          echo "ami_id=$AMI_ID" >> $GITHUB_OUTPUT
+
+      #######################################
+      # NEW: Instance Refresh Steps
+      #######################################
+
+      - name: Get Launch Template ID
+        id: get-lt
+        run: |
+          echo "Finding Launch Template..."
+          LT_ID=$(aws ec2 describe-launch-templates \
+            --filters "Name=tag:Name,Values=csye6225-vpc-asg-launch-template" \
+            --query 'LaunchTemplates[0].LaunchTemplateId' \
+            --output text \
+            --region ${{ secrets.AWS_REGION }})
+          
+          echo "Launch Template ID: $LT_ID"
+          echo "lt_id=$LT_ID" >> $GITHUB_OUTPUT
+
+      - name: Create New Launch Template Version
+        id: update-lt
+        run: |
+          echo "Creating new Launch Template version with AMI: ${{ steps.packer.outputs.ami_id }}"
+          
+          NEW_VERSION=$(aws ec2 create-launch-template-version \
+            --launch-template-id ${{ steps.get-lt.outputs.lt_id }} \
+            --source-version '$Latest' \
+            --launch-template-data "{\"ImageId\":\"${{ steps.packer.outputs.ami_id }}\"}" \
+            --query 'LaunchTemplateVersion.VersionNumber' \
+            --output text \
+            --region ${{ secrets.AWS_REGION }})
+          
+          echo "New Launch Template Version: $NEW_VERSION"
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Set Launch Template Default Version
+        run: |
+          echo "Setting version ${{ steps.update-lt.outputs.version }} as default..."
+          
+          aws ec2 modify-launch-template \
+            --launch-template-id ${{ steps.get-lt.outputs.lt_id }} \
+            --default-version ${{ steps.update-lt.outputs.version }} \
+            --region ${{ secrets.AWS_REGION }}
+          
+          echo "✓ Default version updated successfully"
+
+      - name: Get Auto Scaling Group Name
+        id: get-asg
+        run: |
+          echo "Finding Auto Scaling Group..."
+          ASG_NAME=$(aws autoscaling describe-auto-scaling-groups \
+            --query "AutoScalingGroups[?Tags[?Key=='Name' && Value=='csye6225-vpc-asg']].AutoScalingGroupName" \
+            --output text \
+            --region ${{ secrets.AWS_REGION }})
+          
+          echo "Auto Scaling Group Name: $ASG_NAME"
+          echo "asg_name=$ASG_NAME" >> $GITHUB_OUTPUT
+
+      - name: Start Instance Refresh
+        id: start-refresh
+        run: |
+          echo "Starting instance refresh for ASG: ${{ steps.get-asg.outputs.asg_name }}"
+          
+          REFRESH_ID=$(aws autoscaling start-instance-refresh \
+            --auto-scaling-group-name ${{ steps.get-asg.outputs.asg_name }} \
+            --preferences '{
+              "MinHealthyPercentage": 80,
+              "InstanceWarmup": 300,
+              "CheckpointPercentages": [50, 100],
+              "CheckpointDelay": 300
+            }' \
+            --query 'InstanceRefreshId' \
+            --output text \
+            --region ${{ secrets.AWS_REGION }})
+          
+          echo "Instance Refresh ID: $REFRESH_ID"
+          echo "refresh_id=$REFRESH_ID" >> $GITHUB_OUTPUT
+
+      - name: Wait for Instance Refresh to Complete
+        run: |
+          echo "Waiting for instance refresh to complete..."
+          echo "Refresh ID: ${{ steps.start-refresh.outputs.refresh_id }}"
+          
+          aws autoscaling wait instance-refresh-complete \
+            --auto-scaling-group-name ${{ steps.get-asg.outputs.asg_name }} \
+            --instance-refresh-ids ${{ steps.start-refresh.outputs.refresh_id }} \
+            --region ${{ secrets.AWS_REGION }} \
+            --cli-read-timeout 1200
+          
+          echo "✓ Instance refresh completed successfully!"
+
+      - name: Deployment Summary
+        if: always()
+        run: |
+          echo "========================================="
+          echo "🎉 DEPLOYMENT SUMMARY"
+          echo "========================================="
+          echo "New AMI ID: ${{ steps.packer.outputs.ami_id }}"
+          echo "Launch Template ID: ${{ steps.get-lt.outputs.lt_id }}"
+          echo "Launch Template Version: ${{ steps.update-lt.outputs.version }}"
+          echo "Auto Scaling Group: ${{ steps.get-asg.outputs.asg_name }}"
+          echo "Instance Refresh ID: ${{ steps.start-refresh.outputs.refresh_id }}"
+          echo "========================================="
