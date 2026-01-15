@@ -2,7 +2,7 @@
 
 **Production-ready REST API** with zero-downtime deployments, auto-scaling infrastructure, and automated CI/CD pipeline. Built as a comprehensive cloud computing project showcasing enterprise-grade AWS architecture and DevOps best practices.
 
-[![CI/CD Pipeline](https://img.shields.io/badge/CI%2FCD-Automated-brightgreen)](https://github.com/RitiMoradiyaOrg/webapp-fork/actions)
+[![CI/CD Pipeline](https://img.shields.io/badge/CI%2FCD-Automated-brightgreen)](./.github/workflows)
 [![AWS Infrastructure](https://img.shields.io/badge/AWS-Production%20Ready-orange)](https://aws.amazon.com/)
 [![Node.js](https://img.shields.io/badge/Node.js-22.x-green)](https://nodejs.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14-blue)](https://www.postgresql.org/)
@@ -15,7 +15,7 @@
 - ✅ **Automated CI/CD Pipeline** - Push code → Tests → Build AMI → Deploy automatically
 - ✅ **Zero-Downtime Deployments** - Rolling instance refresh with health checks
 - ✅ **Auto-Scaling Architecture** - Dynamic scaling (3-5 instances) based on CPU load
-- ✅ **High Availability** - Multi-AZ deployment with Application Load Balancer
+- ✅ **High Availability** - Multi-AZ deployment (6 zones) with Application Load Balancer
 - ✅ **Enterprise Security** - KMS encryption (90-day rotation), Secrets Manager, SSL/TLS
 - ✅ **Comprehensive Monitoring** - Segregated CloudWatch logs (info/warn/error), custom metrics
 - ✅ **Serverless Integration** - Event-driven email verification (SNS → Lambda → SES)
@@ -41,8 +41,9 @@
 - [CI/CD Pipeline](#cicd-pipeline)
 - [Monitoring & Logging](#monitoring--logging)
 - [Security](#security)
+- [Testing](#testing)
 - [Project Evolution](#project-evolution)
-- [Contributing](#contributing)
+- [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -66,6 +67,20 @@
     RDS PostgreSQL  S3 Bucket    SNS Topic    Secrets Manager  CloudWatch
     (Multi-AZ)      (KMS)        → Lambda      (KMS)            (Logs/Metrics)
                                  → SES
+```
+
+### **Network Architecture:**
+```
+VPC: 10.0.0.0/16
+│
+├── 7 Public Subnets
+│   ├── Round-robin across 6 Availability Zones
+│   └── Application Load Balancer
+│
+└── 7 Private Subnets
+    ├── Round-robin across 6 Availability Zones
+    ├── EC2 Instances (Auto Scaling Group)
+    └── RDS PostgreSQL (Multi-AZ)
 ```
 
 ### **Key Design Patterns:**
@@ -127,6 +142,7 @@
 - **Monitoring:** CloudWatch Logs and Metrics
 - **DNS:** Route53 with ACM certificates
 - **Security:** KMS (4 separate keys with rotation)
+- **Network:** VPC with 14 subnets across 6 availability zones
 
 ### **DevOps & Infrastructure**
 - **IaC:** Terraform 1.5+
@@ -156,7 +172,7 @@
 ### **Local Development Setup**
 ```bash
 # 1. Clone the repository
-git clone https://github.com/RitiMoradiyaOrg/webapp-fork.git
+git clone <repository-url>
 cd webapp-fork
 
 # 2. Install dependencies
@@ -218,7 +234,7 @@ npm run test:watch
 
 ### **Base URL**
 - **Development:** `http://localhost:8080`
-- **Production:** `https://dev.ritimoradiya.me`
+- **Production:** `https://<your-domain>`
 
 ### **Authentication**
 Protected endpoints require **HTTP Basic Authentication**:
@@ -269,8 +285,8 @@ Create new user account and trigger email verification.
   "last_name": "Doe",
   "username": "john.doe@example.com",
   "email_verified": false,
-  "account_created": "2026-01-14T00:00:00.000Z",
-  "account_updated": "2026-01-14T00:00:00.000Z"
+  "account_created": "2026-01-15T00:00:00.000Z",
+  "account_updated": "2026-01-15T00:00:00.000Z"
 }
 ```
 
@@ -307,17 +323,6 @@ Get authenticated user information.
 **Authentication:** Required
 
 **Response:** `200 OK`
-```json
-{
-  "id": "uuid-string",
-  "first_name": "John",
-  "last_name": "Doe",
-  "username": "john.doe@example.com",
-  "email_verified": true,
-  "account_created": "2026-01-14T00:00:00.000Z",
-  "account_updated": "2026-01-14T00:00:00.000Z"
-}
-```
 
 ---
 
@@ -349,10 +354,10 @@ Create new product.
 **Request:**
 ```json
 {
-  "name": "iPhone 15 Pro",
-  "description": "Latest smartphone",
-  "sku": "APPLE-IP15-PRO",
-  "manufacturer": "Apple Inc.",
+  "name": "Product Name",
+  "description": "Product description",
+  "sku": "UNIQUE-SKU-001",
+  "manufacturer": "Manufacturer Name",
   "quantity": 100
 }
 ```
@@ -384,14 +389,6 @@ Partial product update (owner only).
 **Authentication:** Required  
 **Authorization:** Must be product owner
 
-**Request:** (any subset of fields)
-```json
-{
-  "quantity": 150,
-  "name": "iPhone 15 Pro Max"
-}
-```
-
 **Response:** `204 No Content`
 
 ---
@@ -420,15 +417,6 @@ image: <file> (JPEG, PNG, GIF - max 5MB)
 ```
 
 **Response:** `201 Created`
-```json
-{
-  "image_id": "uuid-string",
-  "product_id": "uuid-string",
-  "file_name": "product-image.jpg",
-  "date_created": "2026-01-14T00:00:00.000Z",
-  "s3_bucket_path": "userId/productId/imageId.jpg"
-}
-```
 
 ---
 
@@ -494,12 +482,6 @@ Custom Amazon Machine Image built with:
 - Systemd service auto-start
 - Security hardening
 
-**Packer Configuration:**
-```bash
-packer init packer.pkr.hcl
-packer build packer.pkr.hcl
-```
-
 ---
 
 ### **Instance Refresh Strategy**
@@ -524,17 +506,17 @@ packer build packer.pkr.hcl
 
 Application logs segregated by level:
 
-- **`/csye6225/dev/webapp/info`** - INFO level logs (general app flow)
-- **`/csye6225/dev/webapp/warn`** - WARN level logs (warnings, invalid requests)
-- **`/csye6225/dev/webapp/error`** - ERROR level logs (exceptions, failures)
-- **`/csye6225/dev/webapp/deployment`** - Deployment script logs
+- **`/csye6225/<env>/webapp/info`** - INFO level logs (general app flow)
+- **`/csye6225/<env>/webapp/warn`** - WARN level logs (warnings, invalid requests)
+- **`/csye6225/<env>/webapp/error`** - ERROR level logs (exceptions, failures)
+- **`/csye6225/<env>/webapp/deployment`** - Deployment script logs
 
 ### **Log Format**
 
 Structured JSON logs with Winston:
 ```json
 {
-  "timestamp": "2026-01-14T03:24:28.556Z",
+  "timestamp": "2026-01-15T03:24:28.556Z",
   "level": "INFO",
   "message": "POST /v1/user - User created successfully",
   "userId": "uuid-string",
@@ -563,15 +545,12 @@ Structured JSON logs with Winston:
 ### **Accessing Logs**
 ```bash
 # Tail INFO logs in real-time
-aws logs tail /csye6225/dev/webapp/info \
-  --follow \
-  --region us-east-1
+aws logs tail /csye6225/<env>/webapp/info --follow
 
 # Search for errors in last hour
 aws logs filter-log-events \
-  --log-group-name /csye6225/dev/webapp/error \
-  --start-time $(date -u -d '1 hour ago' +%s)000 \
-  --region us-east-1
+  --log-group-name /csye6225/<env>/webapp/error \
+  --start-time $(date -u -d '1 hour ago' +%s)000
 ```
 
 ---
@@ -586,7 +565,6 @@ aws logs filter-log-events \
 
 ### **Encryption**
 - **Data at Rest:** KMS encryption with 90-day automatic rotation
-  - Separate keys for EC2, RDS, S3, Secrets Manager
 - **Data in Transit:** TLS 1.2+ via AWS Certificate Manager
 - **Secrets Management:** Database credentials in AWS Secrets Manager
 
@@ -645,7 +623,7 @@ GitHub Actions runs tests automatically on:
 
 This project was built progressively through 9 assignments, each adding complexity:
 
-### **Assignment 1: Foundation** (Basic REST API)
+### **Assignment 1: Foundation**
 - Health check endpoint with database connectivity
 - Proper HTTP status codes and error handling
 - PostgreSQL integration with Sequelize ORM
@@ -654,42 +632,35 @@ This project was built progressively through 9 assignments, each adding complexi
 - User registration with BCrypt password hashing
 - Basic Authentication middleware
 - Product CRUD with ownership validation
-- Automated timestamp management
 
 ### **Assignment 3: Testing & CI/CD**
 - Comprehensive integration test suite (70+ tests)
 - GitHub Actions CI pipeline
 - Automated testing on pull requests
-- Test coverage reporting
 
 ### **Assignment 4: Cloud Infrastructure**
 - Multi-account AWS organization setup
 - Terraform infrastructure as code
 - VPC with public/private subnets
-- Infrastructure validation in CI
 
 ### **Assignment 5: Custom AMI**
 - Packer-based AMI building
 - Automated provisioning scripts
 - EC2 deployment with systemd service
-- AMI sharing across accounts
 
 ### **Assignment 6: RDS & S3 Integration**
 - Migration from local PostgreSQL to AWS RDS
 - S3 integration for image storage
 - IAM roles for AWS service access
-- User-partitioned file organization
 
 ### **Assignment 7: Monitoring & Observability**
 - CloudWatch Agent deployment
 - Winston structured logging
 - StatsD custom metrics
-- Application-level monitoring
 
 ### **Assignment 8: Auto-Scaling & Load Balancing**
 - Auto Scaling Groups (3-5 instances)
 - Application Load Balancer
-- Target tracking scaling policies
 - Multi-AZ high availability
 
 ### **Assignment 9: Advanced Cloud Features** ⭐
@@ -712,7 +683,7 @@ webapp-fork/
 ├── src/
 │   ├── config/
 │   │   ├── database.js          # Database configuration
-│   │   ├── logger.js            # Winston logger setup (segregated logs)
+│   │   ├── logger.js            # Winston logger (segregated logs)
 │   │   └── statsd.js            # StatsD client configuration
 │   ├── models/
 │   │   ├── User.js              # User model with BCrypt
@@ -773,24 +744,16 @@ webapp-fork/
 3. ✅ **Package** - Build custom AMI with Packer (~12 min)
 4. ✅ **Extract AMI ID** - Parse Packer output for new AMI
 5. ✅ **Update Infrastructure:**
-   - Find Launch Template (`csye6225-vpc-launch-template`)
-   - Create new Launch Template version with new AMI
+   - Find Launch Template
+   - Create new version with new AMI
    - Set new version as default
 6. ✅ **Deploy:**
-   - Find Auto Scaling Group (`csye6225-vpc-asg`)
+   - Find Auto Scaling Group
    - Start instance refresh (80% min healthy, 5min warmup)
    - Monitor deployment progress
 7. ✅ **Verify** - Health checks validate new instances
 
 **Total Time:** ~20-25 minutes (fully automated)
-
-**Configuration (GitHub Secrets):**
-```
-AWS_ACCESS_KEY_ID         # IAM user for deployments
-AWS_SECRET_ACCESS_KEY     # IAM secret key
-AWS_REGION                # Deployment region
-DEMO_ACCOUNT_ID           # DEMO AWS account for AMI sharing
-```
 
 ---
 
@@ -831,22 +794,10 @@ git commit -m "feat: Add new feature"
 
 # 4. Push and create PR
 git push origin feature/new-feature
-# Open PR via GitHub UI
 
 # 5. CI runs automatically
-# - Tests must pass
-# - Packer validation required
-
-# 6. Merge PR
-# Automated deployment kicks off!
+# 6. Merge PR → Automated deployment
 ```
-
-### **Code Quality Standards**
-
-- **ESLint** - JavaScript linting
-- **Prettier** - Code formatting
-- **Husky** - Pre-commit hooks (if configured)
-- **Jest** - Minimum 80% test coverage
 
 ---
 
@@ -854,7 +805,7 @@ git push origin feature/new-feature
 
 ### **Local Development Issues**
 
-#### **Database Connection Failed**
+**Database Connection Failed:**
 ```bash
 # Check PostgreSQL status
 brew services list | grep postgresql
@@ -863,12 +814,9 @@ sudo systemctl status postgresql
 
 # Verify credentials
 psql -h localhost -U csye6225 -d csye6225
-
-# Check .env file
-cat .env | grep DB_
 ```
 
-#### **Port Already in Use**
+**Port Already in Use:**
 ```bash
 # Find process using port 8080
 lsof -i :8080
@@ -877,9 +825,9 @@ lsof -i :8080
 kill -9 <PID>
 ```
 
-#### **Dependencies Issues**
+**Dependencies Issues:**
 ```bash
-# Clear node_modules and reinstall
+# Clear and reinstall
 rm -rf node_modules package-lock.json
 npm install
 ```
@@ -888,82 +836,57 @@ npm install
 
 ### **Production Issues**
 
-#### **Instances Unhealthy**
+**Instances Unhealthy:**
 ```bash
 # Check instance logs
-aws logs tail /csye6225/dev/webapp/deployment \
-  --follow \
-  --region us-east-1
+aws logs tail /csye6225/<env>/webapp/deployment --follow
 
 # Check target health
-aws elbv2 describe-target-health \
-  --target-group-arn <arn> \
-  --region us-east-1
+aws elbv2 describe-target-health --target-group-arn <arn>
 ```
 
-#### **CloudWatch Agent Not Running**
+**CloudWatch Agent Not Running:**
 ```bash
 # Check agent status (via Systems Manager)
 aws ssm send-command \
   --instance-ids <instance-id> \
   --document-name "AWS-RunShellScript" \
-  --parameters 'commands=["systemctl status amazon-cloudwatch-agent"]' \
-  --region us-east-1
+  --parameters 'commands=["systemctl status amazon-cloudwatch-agent"]'
 ```
-
----
-
-## 🌐 Production URLs
-
-- **Application:** https://dev.ritimoradiya.me
-- **Health Check:** https://dev.ritimoradiya.me/healthz
-- **API Base:** https://dev.ritimoradiya.me/v1
 
 ---
 
 ## 📝 Database Schema
 
-### **Users**
-```sql
-CREATE TABLE users (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  first_name VARCHAR(255) NOT NULL,
-  last_name VARCHAR(255) NOT NULL,
-  username VARCHAR(255) UNIQUE NOT NULL,  -- Email address
-  password VARCHAR(255) NOT NULL,          -- BCrypt hashed
-  email_verified BOOLEAN DEFAULT false,
-  verification_token VARCHAR(255),
-  verification_token_expiry TIMESTAMP,
-  account_created TIMESTAMP DEFAULT NOW(),
-  account_updated TIMESTAMP DEFAULT NOW()
-);
-```
+### **Users Table**
+- `id` (UUID, Primary Key)
+- `first_name` (String)
+- `last_name` (String)
+- `username` (String, Unique) - Email address
+- `password` (String) - BCrypt hashed
+- `email_verified` (Boolean)
+- `verification_token` (String)
+- `verification_token_expiry` (Timestamp)
+- `account_created` (Timestamp)
+- `account_updated` (Timestamp)
 
-### **Products**
-```sql
-CREATE TABLE products (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name VARCHAR(255) NOT NULL,
-  description TEXT NOT NULL,
-  sku VARCHAR(255) UNIQUE NOT NULL,
-  manufacturer VARCHAR(255) NOT NULL,
-  quantity INTEGER NOT NULL CHECK (quantity >= 0),
-  date_added TIMESTAMP DEFAULT NOW(),
-  date_last_updated TIMESTAMP DEFAULT NOW(),
-  owner_user_id UUID REFERENCES users(id)
-);
-```
+### **Products Table**
+- `id` (UUID, Primary Key)
+- `name` (String)
+- `description` (Text)
+- `sku` (String, Unique)
+- `manufacturer` (String)
+- `quantity` (Integer)
+- `date_added` (Timestamp)
+- `date_last_updated` (Timestamp)
+- `owner_user_id` (UUID, Foreign Key)
 
-### **Images**
-```sql
-CREATE TABLE Images (
-  image_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  product_id UUID REFERENCES products(id) ON DELETE CASCADE,
-  file_name VARCHAR(255) NOT NULL,
-  s3_bucket_path VARCHAR(500) NOT NULL,
-  date_created TIMESTAMP DEFAULT NOW()
-);
-```
+### **Images Table**
+- `image_id` (UUID, Primary Key)
+- `product_id` (UUID, Foreign Key)
+- `file_name` (String)
+- `s3_bucket_path` (String)
+- `date_created` (Timestamp)
 
 ---
 
@@ -989,12 +912,9 @@ CREATE TABLE Images (
 
 ---
 
-## 📚 Additional Resources
-
-- **Course:** CSYE 6225 - Network Structures and Cloud Computing
-- **Institution:** Northeastern University
-- **Infrastructure Repository:** [tf-aws-infra-fork](https://github.com/RitiMoradiyaOrg/tf-aws-infra-fork)
-- **Serverless Repository:** [serverless-fork](https://github.com/RitiMoradiyaOrg/serverless-fork)
+**Related Repositories:**
+- `tf-aws-infra-fork` - Terraform infrastructure configuration
+- `serverless-fork` - Lambda email verification functions
 
 ---
 
@@ -1004,17 +924,4 @@ MIT License - Academic project for CSYE 6225
 
 ---
 
-## 👤 Author
-
-**Riti Moradiya**
-- GitHub: [@ritimoradiya](https://github.com/ritimoradiya)
-- University: Northeastern University
-- Course: CSYE 6225 (Fall 2025)
-
----
-
-## 🌟 Acknowledgments
-
-Built as part of CSYE 6225 Network Structures and Cloud Computing coursework, demonstrating enterprise-grade cloud architecture, DevOps practices, and full-stack development skills.
-
-**Final Implementation:** Assignment 09 - Complete cloud-native platform with automated CI/CD, zero-downtime deployments, and comprehensive observability.
+**Final Implementation:** Complete cloud-native platform with automated CI/CD, zero-downtime deployments, and comprehensive observability.
